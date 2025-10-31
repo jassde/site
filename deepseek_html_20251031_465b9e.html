@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Photo Gallery with Name Grid</title>
+    <style>
+        :root {
+            --primary-color: #663333;
+            --light-color: #f4f4f4;
+            --dark-color: #333;
+            --transition-speed: 0.3s;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--light-color);
+        }
+        
+        /* Fixed Name Grid Header */
+        .name-grid-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 10px 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .name-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .name-item {
+            padding: 6px 12px;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            text-decoration: none;
+            color: var(--dark-color);
+            white-space: nowrap;
+        }
+        
+        .name-item:hover,
+        .name-item:focus {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            outline: none;
+        }
+        
+        /* Adjust body to account for fixed header */
+        .gallery-container {
+            margin-top: 120px;
+            padding: 20px;
+        }
+        
+        .gallery-title {
+            text-align: center;
+            color: var(--dark-color);
+            margin-bottom: 30px;
+        }
+        
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Content styling for each thumbnail */
+        .gallery-item {
+            background-color: white;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            transition: var(--transition-speed);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .gallery-item:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Thumbnail Container with Overlay */
+        .thumbnail-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        
+        /* Filled Thumbnail Image */
+        .thumbnail-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: var(--transition-speed);
+        }
+        
+        .thumbnail-container:hover .thumbnail-image {
+            transform: scale(1.05);
+        }
+        
+        /* Overlay for Hover Name */
+        .overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            transition: .5s ease;
+            background-color: rgba(102, 51, 51, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .thumbnail-container:hover .overlay {
+            opacity: 1;
+        }
+        
+        /* Hover Text (Name) */
+        .overlay-text {
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            padding: 0 10px;
+        }
+        
+        /* The Modal (background) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            padding-top: 0;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        /* Modal Content */
+        .modal-content {
+            position: relative;
+            background-color: transparent;
+            margin: auto;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            max-width: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Image wrapper */
+        .image-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        
+        /* Close Button */
+        .close {
+            color: white;
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            font-size: 35px;
+            font-weight: bold;
+            z-index: 2001;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition-speed);
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            background-color: rgba(0, 0, 0, 0.7);
+            text-decoration: none;
+        }
+        
+        /* Prev/Next Buttons */
+        .prev,
+        .next {
+            cursor: pointer;
+            position: fixed;
+            top: 50%;
+            width: auto;
+            padding: 16px;
+            margin-top: -50px;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2001;
+        }
+        
+        .next {
+            right: 20px;
+            border-radius: 3px 0 0 3px;
+        }
+        
+        .prev {
+            left: 20px;
+            border-radius: 3px 0 0 3px;
+        }
+        
+        .prev:hover,
+        .next:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        /* Number Text */
+        .numbertext {
+            color: #f2f2f2;
+            font-size: 12px;
+            padding: 8px 12px;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            z-index: 2001;
+        }
+        
+        /* Caption */
+        .caption-container {
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 16px;
+            color: white;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+            z-index: 2001;
+            max-width: 90%;
+        }
+        
+        /* Modal Image */
+        #modalImg {
+            max-width: 100vw;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive adjustments */
+        @media screen and (max-width: 1200px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .thumbnail-container {
+                height: 250px;
+            }
+            
+            .overlay-text {
+                font-size: 18px;
+            }
+            
+            .close {
+                font-size: 25px;
+                top: 10px;
+                right: 15px;
+            }
+            
+            .prev, .next {
+                padding: 10px;
+                font-size: 16px;
+            }
+            
+            /* Adjust for mobile */
+            .gallery-container {
+                margin-top: 160px;
+            }
+            
+            .name-item {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .thumbnail-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fixed Name Grid Header -->
+    <header class="name-grid-header">
+        <div class="name-grid" id="nameGrid">
+            <!-- Name links will be dynamically inserted here -->
+        </div>
+    </header>
+    
+    <div class="gallery-container">
+        <h1 class="gallery-title">Modern Photo Gallery</h1>
+        
+        <div class="gallery-grid" id="galleryGrid">
+            <!-- Thumbnails will be dynamically inserted here -->
+        </div>
+    </div>
+    
+    <!-- The Modal -->
+    <div id="myModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-describedby="modalDescription">
+        <span class="close" tabindex="0" aria-label="Close modal">&times;</span>
+        <div class="modal-content">
+            <div class="image-wrapper">
+                <div id="number" class="numbertext"></div>
+                <img id="modalImg" alt="">
+                <a class="prev" onclick="plusSlides(-1)" tabindex="0" aria-label="Previous image">&#10094;</a>
+                <a class="next" onclick="plusSlides(1)" tabindex="0" aria-label="Next image">&#10095;</a>
+            </div>
+            <div id="caption" class="caption-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // List of names from context (/names.txt)
+        const names = [
+            "Abby Boom", "Abelina Sabrina", "Alanah Pearce", "Alexandra Daddario", "Alinty",
+            "Amy Schumer", "Andrea Botez", "Anne Hathaway", "AriaSaki", "Ariel Winter",
+            "Ashley Graham", "Azzyland", "Bella Poarch", "Bhadbhabie", "Billie Eilish",
+            "Brie Larson", "Brookeab", "Chappel roan", "Coco Austin", "Colleen Ballinger",
+            "Dafne Keen", "Emilia Clarke", "Emily Ratajkowski", "Erin Moriarty", "Farrah Abraham",
+            "Georgia Hirst", "Heyimbee",
+            "Holly Hagan", "Iliza Shlesinger", "Jaclyn Glenn",
+            "Jodi/QuarterJade", "Kallmekris", "Katheryn Winnick", "Kira Kosarin", "Kylie Jenner",
+            "Lelepons", "Liz The Score Esport", "Mariah Carey", "Miesha Tate", "Miley Cyrus",
+            "Millie Bobby Brown", "quaterjade", "Olivia Rodrigo", "Paige VanZant", "Pokimane",
+            "Qtcinderlla", "Sarah Silverman", "ShoeOnhead", "Sofia Vergara", "Sophia Diamond",
+            "Susujpg", "Tana Mongeau", "Valkyrae"
+        ];
+        
+        // Global variables
+        let slideIndex = 1;
+        let currentFolder = '';
+        let folderMaxSlides = {};
+        const MAX_IMAGES_TO_CHECK = 20;
+        
+        // getMaxSlides function
+        async function getMaxSlides(folder) {
+            let max = 0;
+            for (let i = 1; i <= MAX_IMAGES_TO_CHECK; i++) {
+                const img = new Image();
+                const promise = new Promise((resolve) => {
+                    img.onload = () => {
+                        max = i;
+                        resolve(true);
+                    };
+                    img.onerror = () => {
+                        resolve(false);
+                    };
+                    img.src = `./img/${folder}/${i}.jpg`;
+                });
+                const exists = await promise;
+                if (!exists) {
+                    break;
+                }
+            }
+            return Math.max(max, 1);
+        }
+        
+        // Function to scroll to a specific thumbnail
+        function scrollToThumbnail(sanitizedName) {
+            const element = document.getElementById(`thumb-${sanitizedName}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Add highlight effect
+                element.style.boxShadow = '0 0 0 3px #663333';
+                setTimeout(() => {
+                    element.style.boxShadow = '';
+                }, 2000);
+            }
+        }
+        
+        // Dynamically generate name grid and thumbnails
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Generate name grid
+            const nameGrid = document.getElementById('nameGrid');
+            for (const name of names) {
+                const sanitized = name.replace(/[ /]/g, '_');
+                const nameItem = document.createElement('a');
+                nameItem.className = 'name-item';
+                nameItem.href = `#${sanitized}`;
+                nameItem.textContent = name;
+                nameItem.setAttribute('tabindex', '0');
+                nameItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    scrollToThumbnail(sanitized);
+                });
+                nameItem.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        scrollToThumbnail(sanitized);
+                    }
+                });
+                nameGrid.appendChild(nameItem);
+            }
+            
+            // Generate thumbnails
+            const galleryGrid = document.getElementById('galleryGrid');
+            for (const name of names) {
+                const sanitized = name.replace(/[ /]/g, '_');
+
+                // Pick a random image between 1 and 3
+                const randomIndex = Math.floor(Math.random() * 3) + 1;
+                const imgSrc = `./img/${sanitized}/${randomIndex}.jpg`;
+
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.id = `thumb-${sanitized}`;
+                galleryItem.innerHTML = `
+                    <div class="thumbnail-container" tabindex="0" role="button" aria-label="View ${name} gallery">
+                        <img src="${imgSrc}" loading="lazy" alt="${name}" class="thumbnail-image">
+                        <div class="overlay">
+                            <div class="overlay-text">${name}</div>
+                        </div>
+                    </div>
+                `;
+                galleryGrid.appendChild(galleryItem);
+
+                // Attach click listener to container
+                const container = galleryItem.querySelector('.thumbnail-container');
+                container.addEventListener('click', () => openModalFor(sanitized, name));
+                container.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openModalFor(sanitized, name);
+                    }
+                });
+            }
+        });
+        
+        // openModalFor
+        async function openModalFor(folder, originalName) {
+            currentFolder = folder;
+            slideIndex = 1;
+            const modal = document.getElementById("myModal");
+            modal.style.display = "block";
+            document.getElementById('caption').innerHTML = '<span class="loading"></span>Loading gallery...';
+            
+            if (!folderMaxSlides[folder]) {
+                const max = await getMaxSlides(folder);
+                folderMaxSlides[folder] = max;
+            }
+            
+            document.getElementById('caption').innerHTML = `Gallery: ${originalName}`;
+            showSlide(1);
+        }
+        
+        // closeModal
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none";
+        }
+        
+        // showSlide
+        function showSlide(n) {
+            const max = folderMaxSlides[currentFolder] || 1;
+            if (n > max) n = 1;
+            if (n < 1) n = max;
+            slideIndex = n;
+            const img = document.getElementById('modalImg');
+            img.src = `./img/${currentFolder}/${n}.jpg`;
+            img.alt = `Image ${n} of ${max} for ${currentFolder}`;
+            document.getElementById('number').innerHTML = `${n} / ${max}`;
+            const prevBtn = document.querySelector('.prev');
+            const nextBtn = document.querySelector('.next');
+            if (max === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+            }
+        }
+        
+        // plusSlides
+        function plusSlides(n) {
+            showSlide(slideIndex + n);
+        }
+        
+        // Keyboard navigation for modal
+        function handleKeyDown(e) {
+            if (document.getElementById("myModal").style.display === "block") {
+                switch(e.key) {
+                    case 'Escape':
+                        closeModal();
+                        break;
+                    case 'ArrowLeft':
+                        plusSlides(-1);
+                        break;
+                    case 'ArrowRight':
+                        plusSlides(1);
+                        break;
+                }
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById("myModal");
+            const span = document.getElementsByClassName("close")[0];
+            
+            span.onclick = function() {
+                closeModal();
+            };
+            
+            span.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    closeModal();
+                }
+            });
+            
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            };
+            
+            // Add keyboard event listener
+            document.addEventListener('keydown', handleKeyDown);
+        });
+    </script>
+
+</body>
+</html>
